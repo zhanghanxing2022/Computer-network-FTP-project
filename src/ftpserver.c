@@ -42,10 +42,10 @@ int main(int argc, char *argv[]){
         perror("socket");
     }
 
-    struct sockaddr_in addrSer,addrCli;
-    addrSer.sin_family = AF_INET;
-    addrSer.sin_port = htons(SERVER_PORT);
-    addrSer.sin_addr.s_addr = inet_addr(SERVER_IP);
+    struct sockaddr_in addrSer,addrCli; //创建一个记录地址信息的结构体
+    addrSer.sin_family = AF_INET;//创建一个记录地址信息的结构体
+    addrSer.sin_port = htons(SERVER_PORT);//设置地址结构体中的端口号
+    addrSer.sin_addr.s_addr = inet_addr(SERVER_IP);//设置其中的服务器ip
 
     socklen_t addrlen = sizeof(struct sockaddr);
     int res = bind(sockSer,(struct sockaddr*)&addrSer,addrlen);
