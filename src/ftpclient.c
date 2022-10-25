@@ -16,6 +16,12 @@
  
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+    WSADATA wsaData;
+    if(0 !=WSAStartup(MAKEWORD(2,2), &wsaData)){
+        printf("Error: Unable to start WSAS\n");
+    }
+#endif
     //创建客户端套接字号，并检测是否创建成功
     int sockCli;
     sockCli = socket(AF_INET, SOCK_STREAM, 0);

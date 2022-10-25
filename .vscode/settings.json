@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.java": "java",
+        "string": "cpp",
+        "iosfwd": "cpp",
+        "stdexcept": "cpp",
+        "winsock2.h": "c"
+    },
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+}
