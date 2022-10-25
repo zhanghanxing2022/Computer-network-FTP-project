@@ -1,11 +1,17 @@
-#include <sys/socket.h>
+#ifdef _WIN32
+    #include<Winsock2.h>
+    #include <ws2tcpip.h>
+#elif defined __APPLE__
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+#endif
 #include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#define SERBER_PORT 5050
+#define SERVER_PORT 5050
 #define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
 
@@ -32,7 +38,7 @@ int main(int argc, char *argv[]){
 
     struct sockaddr_in addrSer,addrCli;
     addrSer.sin_family = AF_INET;
-    addrSer.sin_port = htons(SERBER_PORT);
+    addrSer.sin_port = htons(SERVER_PORT);
     addrSer.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     socklen_t addrlen = sizeof(struct sockaddr);

@@ -1,9 +1,14 @@
 #include<unistd.h>
 #include<stdio.h>
 #include<string.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<arpa/inet.h>
+#ifdef _WIN32
+    #include<Winsock2.h>
+    #include <ws2tcpip.h>
+#elif defined __APPLE__
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+#endif
  
 #define SERVER_PORT  5050
 #define SERVER_IP    "127.0.0.1"
