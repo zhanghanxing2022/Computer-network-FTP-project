@@ -30,9 +30,14 @@ int main(int argc, char *argv[]){
     if(sockSer == -1){
         perror("socket");
     }
+#ifdef _WIN32
+    char yes[256] = "1";
+#elif defined __APPLE__
+    int temp = 1;
+    int* yes = &temp;
+#endif
 
-    int yes = 1;
-    if(setsockopt(sockSer, SOL_SOCKET, SO_REUSEADDR,&yes,sizeof(int))==-1){
+    if(setsockopt(sockSer, SOL_SOCKET, SO_REUSEADDR,yes,sizeof(int))==-1){
         perror("socket");
     }
 
