@@ -1,6 +1,7 @@
 #ifdef _WIN32
-    #include<Winsock2.h>
+    #include<WinSock2.h>
     #include <ws2tcpip.h>
+    #pragma comment(lib,"ws2_32.lib")
 #elif defined __APPLE__
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -30,9 +31,12 @@ int main(int argc, char *argv[]){
     if(sockSer == -1){
         perror("socket");
     }
-
-    int yes = 1;
-    if(setsockopt(sockSer, SOL_SOCKET, SO_REUSEADDR,&yes,sizeof(int))==-1){
+#ifdef _WIN32
+    char yes[256] = "1";
+#elif defined __APPLE__
+    int* yes = 1;
+#endif
+    if(setsockopt(sockSer, SOL_SOCKET, SO_REUSEADDR,yes,sizeof(int))==-1){
         perror("socket");
     }
 
