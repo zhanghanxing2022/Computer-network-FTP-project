@@ -54,8 +54,10 @@ int main(int argc, char *argv[]){
         printf("Client Port:> %d\n", ntohs(addrCli.sin_port));
     }
 
-    char sendbuf[256];
-    char recvbuf[256];
+    char sendbuf[256];     //申请一个发送数据缓存区
+    char recvbuf[256];     //申请一个接收数据缓存区
+    memset(sendbuf,0,sizeof(sendbuf));
+    memset(recvbuf,0,sizeof(recvbuf));
     while (1)
     {
         printf("Ser:>");

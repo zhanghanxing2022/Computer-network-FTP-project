@@ -34,6 +34,8 @@ int main(int argc, char *argv[])
  
     char sendbuf[256];     //申请一个发送数据缓存区
     char recvbuf[256];     //申请一个接收数据缓存区
+    memset(sendbuf,0,sizeof(sendbuf));
+    memset(recvbuf,0,sizeof(recvbuf));
     while(1)
     {
         recv(sockCli, recvbuf, 256, 0);    //接收来自服务器的数据
