@@ -2,8 +2,9 @@
 #include<stdio.h>
 #include<string.h>
 #ifdef _WIN32
-    #include<Winsock2.h>
+    #include<WinSock2.h>
     #include <ws2tcpip.h>
+    #pragma comment(lib,"ws2_32.lib")
 #elif defined __APPLE__
     #include <sys/socket.h>
     #include <netinet/in.h>
