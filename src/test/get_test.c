@@ -4,13 +4,13 @@
 #include <stdbool.h>
 typedef char Buf[256];
 void fetch_in(Readbolck*b){
-    memcpy(b->filepath,"/Users/zhanghanxing/Desktop/大三/计算机网络/Computer-network-FTP-project/ClientFile/hello",
-    sizeof("/Users/zhanghanxing/Desktop/大三/计算机网络/Computer-network-FTP-project/ClientFile/hello"));
+    memcpy(b->filepath,"../ClientFile/hello",
+    sizeof("../ClientFile/hello"));
 
 }
 void push_out(Readbolck*b){
-    memcpy(b->filepath,"/Users/zhanghanxing/Desktop/大三/计算机网络/Computer-network-FTP-project/ServerFile/hello",
-    sizeof("/Users/zhanghanxing/Desktop/大三/计算机网络/Computer-network-FTP-project/ServerFile/hello"));
+    memcpy(b->filepath,"../ServerFile/hello",
+    sizeof("../ServerFile/hello"));
 }
 int main(){
     char* buf =(char*)calloc(CACHE_SIZE, sizeof(char));
