@@ -2,6 +2,11 @@
     "files.associations": {
         "*.java": "java",
         "file.h": "c",
-        "unistd.h": "c"
-    }
+        "unistd.h": "c",
+        "string": "cpp",
+        "iosfwd": "cpp",
+        "stdexcept": "cpp",
+        "winsock2.h": "c"
+    },
+    "editor.suggest.snippetsPreventQuickSuggestions": false
 }

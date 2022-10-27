@@ -26,6 +26,12 @@ struct MsgHeader
 #pragma pack()
 
 int main(int argc, char *argv[]){
+#ifdef _WIN32
+    WSADATA wsaData;
+    if(0 !=WSAStartup(MAKEWORD(2,2), &wsaData)){
+        printf("Error: Unable to start WSAS\n");
+    }
+#endif
     int sockSer;
     sockSer = socket(AF_INET, SOCK_STREAM, 0);
     if(sockSer == -1){
@@ -61,7 +67,7 @@ int main(int argc, char *argv[]){
     if(sockConn == -1)
         perror("accept");
     else{
-        printf("Server Accept Clinet OK.\n");
+        printf("Server Accept Client OK.\n");
         printf("Client IP:> %s\n", inet_ntoa(addrCli.sin_addr));
         printf("Client Port:> %d\n", ntohs(addrCli.sin_port));
     }
