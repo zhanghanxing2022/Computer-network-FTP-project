@@ -4,14 +4,14 @@
 #include "file.h"
 #define ORDER_SUM 8
 enum Syntax_Cmd{
-    FTPCli_get,
-    FTPCli_put,
-    FTPCli_delete,
-    FTPCli_ls,
-    FTPCli_cd,
-    FTPCli_mkdir,
-    FTPCli_pwd,
-    FTPCli_quit
+    FTP_get,
+    FTP_put,
+    FTP_delete,
+    FTP_ls,
+    FTP_cd,
+    FTP_mkdir,
+    FTP_pwd,
+    FTP_quit
 };
 typedef struct MsgHeader
 {
