@@ -8,6 +8,7 @@
     #include <arpa/inet.h>
 #endif
 #include <sys/types.h>
+#include "header/defines.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -15,15 +16,8 @@
 #define SERVER_PORT 5050
 #define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
+const char Serpath[] = "./ServerFile/";
 
-
-#pragma pack(1) // 设置结构体1字节对齐**************
-
-struct MsgHeader
-{
-    /* data */
-};
-#pragma pack()
 
 int main(int argc, char *argv[]){
 #ifdef _WIN32
@@ -72,22 +66,46 @@ int main(int argc, char *argv[]){
         printf("Client Port:> %d\n", ntohs(addrCli.sin_port));
     }
 
-    char sendbuf[256];     //申请一个发送数据缓存区
-    char recvbuf[256];     //申请一个接收数据缓存区
+    char sendbuf[sizeof(MsgHeader)+1];     //申请一个发送数据缓存区
+    char recvbuf[sizeof(MsgHeader)+1];     //申请一个接收数据缓存区
     memset(sendbuf,0,sizeof(sendbuf));
     memset(recvbuf,0,sizeof(recvbuf));
+    MsgHeader *SendHeader = (MsgHeader*)sendbuf;
+    MsgHeader *RecvHeader = (MsgHeader*)recvbuf;
     while (1)
     {
-        printf("Ser:>");
-        scanf("%[^\n]",sendbuf);
-        fflush(stdin);
-        if(strncmp(sendbuf, "quit", 4) ==0)
-            break;
-        send(sockConn, sendbuf, strlen(sendbuf)+1, 0);
-        recv(sockConn, recvbuf, 256, 0);
-        printf("Cli:> %s\n", recvbuf);
-
+        recv(sockConn, recvbuf, sizeof(recvbuf)+1, 0);
+        printf("Cli>%s\n",RecvHeader->data);
+        if(RecvHeader->s_cmd == FTP_get){
+            Readbolck sendblock;
+            memset(&sendblock,0,sizeof(sendblock));
+            sendblock.cache = SendHeader->data;
+            memset(SendHeader->data,0,sizeof(SendHeader->data));
+            sendblock.method = BY_ASCII;
+            strncpy(sendblock.filepath,Serpath,strlen(Serpath));
+            strcat(sendblock.filepath, RecvHeader->data);
+            printf("get %s\n",sendblock.filepath);
+            while (sendblock.lst==false&&sendblock.error==false)
+            {
+                read_from_file(&sendblock,CACHE_SIZE-100);
+                // printf("%s\n",SendHeader->data);
+                printf("%d\n",sendblock.cur_size);
+                SendHeader->cur_size = sendblock.cur_size;
+                SendHeader->last = sendblock.lst;
+                printf("len:%d\n",sendblock.cur_size);
+                send(sockConn, SendHeader, sizeof(MsgHeader)+1, 0);
+                recv(sockConn, recvbuf, sizeof(recvbuf), 0);
+            }
+            
+        }
     }
+    
+    
+    
+    
+    printf("Cli:> %s\n", recvbuf);
+
+    
     close(sockSer);
     return 0;
 }

@@ -48,7 +48,7 @@ FILE_MODE file_type(const char* filename)
     return NOT_FOUND;
 }
 void read_from_file(Readbolck*block,int len){
-    memset(block->cache,0,CACHE_SIZE);
+    memset(block->cache,0,len);
     block->descriptor=file_type(block->filepath);
     if(block->descriptor == NOT_FOUND){
         block->error = true;
@@ -57,6 +57,7 @@ void read_from_file(Readbolck*block,int len){
     fp1 = fopen(block->filepath,block->method==BY_ASCII?"r":"rb");
     if(fp1 == NULL){
         block->error = true;
+        printf("NOT_found");
         return;
     }
     fseek(fp1,block->tail,SEEK_SET);
@@ -67,7 +68,10 @@ void read_from_file(Readbolck*block,int len){
         block->lst = true;
     }
     block->tail = ftell(fp1);
+    printf("before close;\n");
     fclose(fp1);
+    printf("after close;\n");
+
 }
 
 void put_in_file(Readbolck*block,int len){
@@ -80,5 +84,5 @@ void put_in_file(Readbolck*block,int len){
         return;
     }
     fwrite(block->cache, sizeof(char), block->cur_size,fp2);
-    fclose(fp1);
+    fclose(fp2);
 }
