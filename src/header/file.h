@@ -38,11 +38,9 @@ FILE_MODE file_type(const char* filename)
     struct stat statbuf;
     
     if (stat( filename, &statbuf) == -1)
-
         return NOT_FOUND;
     if (S_ISDIR(statbuf.st_mode))
         return A_DIR;
-    
     if (S_ISREG(statbuf.st_mode))
         return A_FILE;
     return NOT_FOUND;
@@ -52,6 +50,7 @@ void read_from_file(Readbolck*block,int len){
     block->descriptor=file_type(block->filepath);
     if(block->descriptor == NOT_FOUND){
         block->error = true;
+        printf("No such file\n");
         return;
     }
     fp1 = fopen(block->filepath,block->method==BY_ASCII?"r":"rb");
@@ -79,6 +78,6 @@ void put_in_file(Readbolck*block,int len){
         block->error = true;
         return;
     }
-    fwrite(block->cache, sizeof(char), block->cur_size,fp2);
-    fclose(fp1);
+    fwrite(block->cache, sizeof(char), len,fp2);
+    fclose(fp2);
 }

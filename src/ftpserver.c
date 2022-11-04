@@ -16,14 +16,8 @@
 #define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
 
+#include"header\defines.h"
 
-#pragma pack(1) // 设置结构体1字节对齐**************
-
-struct MsgHeader
-{
-    /* data */
-};
-#pragma pack()
 
 int main(int argc, char *argv[]){
 #ifdef _WIN32
@@ -72,8 +66,8 @@ int main(int argc, char *argv[]){
         printf("Client Port:> %d\n", ntohs(addrCli.sin_port));
     }
 
-    char sendbuf[256];     //申请一个发送数据缓存区
-    char recvbuf[256];     //申请一个接收数据缓存区
+    char sendbuf[sizeof(struct MsgHeader)+1];     //申请一个发送数据缓存区
+    char recvbuf[sizeof(struct MsgHeader)+1];     //申请一个接收数据缓存区
     memset(sendbuf,0,sizeof(sendbuf));
     memset(recvbuf,0,sizeof(recvbuf));
     while (1)
@@ -83,10 +77,53 @@ int main(int argc, char *argv[]){
         fflush(stdin);
         if(strncmp(sendbuf, "quit", 4) ==0)
             break;
-        send(sockConn, sendbuf, strlen(sendbuf)+1, 0);
-        recv(sockConn, recvbuf, 256, 0);
-        printf("Cli:> %s\n", recvbuf);
+        else send(sockConn, sendbuf, strlen(sendbuf)+1, 0);
 
+        printf("Cli:> ");
+        //Control Connection receive
+        recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
+        struct MsgHeader* ControlMsg=(struct MsgHeader*) recvbuf;
+        //printf("receive Control connection\n");
+        /*
+        struct MsgHeader Control_recvMsg;
+        Control_recvMsg.last=1;
+        send(sockConn, (char*)&Control_recvMsg, sizeof(struct MsgHeader)+1, 0);
+        */
+        struct Readbolck block;
+        memset(&block,0,sizeof(block));
+        switch(ControlMsg->Cmdtype){
+            case FTP_put:
+                //get filename
+                strncpy(block.filepath,"ServerFile/",11);
+                strncpy(block.filepath+11,ControlMsg->data+4,ControlMsg->data_size-4);
+                //printf("filepath:%s\n",block.filepath);
+                //Data Receive
+                struct MsgHeader* DataMsg;
+                do{
+                    recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
+                    DataMsg=(struct MsgHeader*) recvbuf;
+                    block.cache=DataMsg->data;
+                    put_in_file(&block,DataMsg->data_size);
+                }while(DataMsg->last==0);
+                printf("\n");
+                break;
+            case FTP_mkdir:
+                strncpy(block.filepath,"ServerFile/",11);
+                strncpy(block.filepath+11,ControlMsg->data+6,ControlMsg->data_size-6);
+                if(_access(block.filepath,0)==-1){
+                    mkdir(block.filepath);
+                }
+                printf("\n");
+                break;
+        }
+
+        
+
+
+        
+        
+
+        
     }
     close(sockSer);
     return 0;
