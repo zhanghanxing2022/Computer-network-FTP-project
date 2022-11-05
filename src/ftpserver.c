@@ -188,9 +188,10 @@ int main(int argc, char *argv[])
             // if (strncmp(sendbuf,"delete", 6) == 0) {
 
             // }
-            // if (strncmp(sendbuf,"pwd", 3) == 0) {
-
-            // }
+            if (strncmp(command,"pwd", 3) == 0) {
+                memset(sendbuf, 0, sizeof(sendbuf));
+                strcpy(sendbuf, client_current_path);
+            }
         }
         send(sockConn, sendbuf, strlen(sendbuf) + 1, 0);
     }

@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
             }
             if (strncmp(command, "pwd", 2) == 0)
             {
-                if (length != 2)
+                if (length != 1)
                 {
                     printf("wrong commad\n");
                     continue;
@@ -106,6 +106,10 @@ int main(int argc, char *argv[])
             else {
                 printf("path does not exit\n");
             }
+        }
+        if (strncmp(command, "pwd", 3) == 0)
+        {
+            printf("%s\n",recvbuf);
         }
         // printf("Ser:> %s\n",recvbuf);
     }
