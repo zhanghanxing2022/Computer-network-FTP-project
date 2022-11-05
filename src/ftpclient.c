@@ -14,7 +14,7 @@
  
 #define SERVER_PORT  5050
 #define SERVER_IP    "127.0.0.1"
- 
+
 const char Clientpath[] = "./ClientFile/";
 int main(int argc, char *argv[])
 {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     sockCli = socket(AF_INET, SOCK_STREAM, 0);
     if(sockCli == -1)
         perror("socket");
- 
+
     //创建一个地址信息结构体，并对其内容进行设置
     struct sockaddr_in addrSer,addrCli;
     addrSer.sin_family = AF_INET;         //使用AF_INET协议族
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
                 recvb.cache = RecvMsg->data;
                 recvb.method = BY_ASCII;
                 put_in_file(&recvb,CACHE_SIZE-100);
-                send(sockCli,sendbuf, sizeof(SendMsg)+1, 0);
+                // send(sockCli,sendbuf, sizeof(SendMsg)+1, 0);
             }
             
         }

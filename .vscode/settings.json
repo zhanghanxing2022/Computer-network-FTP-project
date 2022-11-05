@@ -6,7 +6,10 @@
         "string": "cpp",
         "iosfwd": "cpp",
         "stdexcept": "cpp",
-        "winsock2.h": "c"
+        "winsock2.h": "c",
+        "socket.h": "c",
+        "in.h": "c",
+        "inet.h": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false
 }

@@ -38,6 +38,7 @@ typedef struct MsgHeader
 {
     Syntax_Cmd s_cmd;
     MSG_DATA_TYPE DorI;
+    CODE_METRIC method;
     bool last;
     bool error;
     int cur_size;

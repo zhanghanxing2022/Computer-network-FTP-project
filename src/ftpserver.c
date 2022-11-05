@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #define SERVER_PORT 5050
-#define SERVER_IP "127.0.0.1"
+#define SERVER_IP "192.168.31.187"
 #define QUEUE_SIZE 5
 const char Serpath[] = "./ServerFile/";
 
@@ -81,20 +81,18 @@ int main(int argc, char *argv[]){
             memset(&sendblock,0,sizeof(sendblock));
             sendblock.cache = SendHeader->data;
             memset(SendHeader->data,0,sizeof(SendHeader->data));
-            sendblock.method = BY_ASCII;
+            sendblock.method = BY_BIT;
             strncpy(sendblock.filepath,Serpath,strlen(Serpath));
             strcat(sendblock.filepath, RecvHeader->data);
             printf("get %s\n",sendblock.filepath);
             while (sendblock.lst==false&&sendblock.error==false)
             {
                 read_from_file(&sendblock,CACHE_SIZE-100);
-                // printf("%s\n",SendHeader->data);
                 printf("%d\n",sendblock.cur_size);
                 SendHeader->cur_size = sendblock.cur_size;
                 SendHeader->last = sendblock.lst;
-                printf("len:%d\n",sendblock.cur_size);
+                // printf("len:%d\n",sendblock.cur_size);
                 send(sockConn, SendHeader, sizeof(MsgHeader)+1, 0);
-                recv(sockConn, recvbuf, sizeof(recvbuf), 0);
             }
             
         }
