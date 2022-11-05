@@ -25,13 +25,13 @@ int main(){
         if(block.error == true){
             printf("not_found\n");
         }
-        // for (int i = 0; i < block.cur_size; i++)
+        // for (int i = 0; i < block.data_size; i++)
         // {
         //     printf("%c",block.cache[i]);
         // }
         push_out(&block);
-        put_in_file(&block,block.cur_size);
-        // printf("%d\n",block.cur_size);
+        put_in_file(&block,block.data_size);
+        // printf("%d\n",block.data_size);
     }
 
 }

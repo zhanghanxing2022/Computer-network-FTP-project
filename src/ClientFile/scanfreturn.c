@@ -5,6 +5,6 @@ int main(){
     memset(buf,0,sizeof(buf));
     int len = 0;
     printf("input:\n");
-    len = scanf("%[^\n]",buf);
-    printf("len:%d,LEN:%d\n,string:%s\n",len,strlen(buf),buf);
+    len = scanf("%*[ |\t]%[^\n]",buf);
+    printf("len:%d,LEN:%d\n,string:%s.\n",len,strlen(buf),buf);
 }

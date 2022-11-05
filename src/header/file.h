@@ -26,7 +26,7 @@ typedef struct Readbolck
     bool lst;
     unsigned long tail;
     unsigned long long length;
-    int cur_size;
+    int data_size;
     char *cache;
     FILE_MODE descriptor;
     CODE_METRIC method;
@@ -52,6 +52,7 @@ void read_from_file(Readbolck*block,int len){
     block->descriptor=file_type(block->filepath);
     if(block->descriptor == NOT_FOUND){
         block->error = true;
+        printf("NOT_found");
         return;
     }
     fp1 = fopen(block->filepath,block->method==BY_ASCII?"r":"rb");
@@ -62,7 +63,7 @@ void read_from_file(Readbolck*block,int len){
     }
     fseek(fp1,block->tail,SEEK_SET);
     
-    block->cur_size = fread(block->cache,sizeof(char),255,fp1);
+    block->data_size = fread(block->cache,sizeof(char),255,fp1);
     
     if(feof(fp1)!=0){
         block->lst = true;
@@ -83,6 +84,6 @@ void put_in_file(Readbolck*block,int len){
         block->error = true;
         return;
     }
-    fwrite(block->cache, sizeof(char), block->cur_size,fp2);
+    fwrite(block->cache, sizeof(char), block->data_size,fp2);
     fclose(fp2);
 }

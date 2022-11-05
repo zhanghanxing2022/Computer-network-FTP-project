@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #define SERVER_PORT 5050
-#define SERVER_IP "192.168.31.187"
+#define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
 const char Serpath[] = "./ServerFile/";
 
@@ -70,32 +70,66 @@ int main(int argc, char *argv[]){
     char recvbuf[sizeof(MsgHeader)+1];     //申请一个接收数据缓存区
     memset(sendbuf,0,sizeof(sendbuf));
     memset(recvbuf,0,sizeof(recvbuf));
-    MsgHeader *SendHeader = (MsgHeader*)sendbuf;
-    MsgHeader *RecvHeader = (MsgHeader*)recvbuf;
+    MsgHeader *SendMsg = (MsgHeader*)sendbuf;
+    MsgHeader *RecvMsg = (MsgHeader*)recvbuf;
+    Readbolck block;
     while (1)
     {
         recv(sockConn, recvbuf, sizeof(recvbuf)+1, 0);
-        printf("Cli>%s\n",RecvHeader->data);
-        if(RecvHeader->s_cmd == FTP_get){
-            Readbolck sendblock;
-            memset(&sendblock,0,sizeof(sendblock));
-            sendblock.cache = SendHeader->data;
-            memset(SendHeader->data,0,sizeof(SendHeader->data));
-            sendblock.method = BY_BIT;
-            strncpy(sendblock.filepath,Serpath,strlen(Serpath));
-            strcat(sendblock.filepath, RecvHeader->data);
-            printf("get %s\n",sendblock.filepath);
-            while (sendblock.lst==false&&sendblock.error==false)
+        printf("Cli>%s\n",RecvMsg->data);
+        switch (RecvMsg->s_cmd)
+        {
+        case FTP_get:
+            memset(&block,0,sizeof(block));
+            block.cache = SendMsg->data;
+            memset(SendMsg->data,0,sizeof(SendMsg->data));
+            block.method = BY_BIT;
+            strncpy(block.filepath,Serpath,strlen(Serpath));
+            strcat(block.filepath, RecvMsg->data);
+            printf("get %s\n",block.filepath);
+            while (block.lst==false&&block.error==false)
             {
-                read_from_file(&sendblock,CACHE_SIZE-100);
-                printf("%d\n",sendblock.cur_size);
-                SendHeader->cur_size = sendblock.cur_size;
-                SendHeader->last = sendblock.lst;
-                // printf("len:%d\n",sendblock.cur_size);
-                send(sockConn, SendHeader, sizeof(MsgHeader)+1, 0);
+                read_from_file(&block,CACHE_SIZE);
+                printf("Ser>data_size:%d\n",block.data_size);
+                SendMsg->data_size = block.data_size;
+                SendMsg->last = block.lst;
+                printf("Ser>len:%d\n",block.data_size);
+                send(sockConn, SendMsg, sizeof(MsgHeader)+1, 0);
             }
-            
+            break;
+        
+        case FTP_put:
+            memset(&block,0,sizeof(block));
+            block.method = BY_BIT;
+            //get filename
+            strncpy(block.filepath,Serpath,sizeof(Serpath));
+            strcat(block.filepath,RecvMsg->data);
+            //printf("filepath:%s\n",block.filepath);
+            //Data Receive
+            struct MsgHeader* DataMsg;
+            do{
+                recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
+                DataMsg=(struct MsgHeader*) recvbuf;
+                block.cache=DataMsg->data;
+                block.data_size = DataMsg->data_size;
+                put_in_file(&block,0);
+            }while(DataMsg->last==0);
+            printf("\n");
+            break;
+        case FTP_mkdir:
+            memset(&block,0,sizeof(block));
+            strncpy(block.filepath,Serpath,sizeof(Serpath));
+            strcat(block.filepath,RecvMsg->data);
+            printf("Ser>mkdir %s",block.filepath);
+            if(file_type(block.filepath) == NOT_FOUND){
+                mkdir(block.filepath,0777);
+            }
+            printf("\n");
+            break;
+        default:
+            break;
         }
+        
     }
     
     
