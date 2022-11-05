@@ -60,15 +60,19 @@ int main(int argc, char *argv[])
     while (1)
     {
         printf("%s:>", current_path);
+        memset(sendbuf, 0, sizeof(sendbuf));
         scanf("%[^\n]", sendbuf);
         fflush(stdin);
+        
         if (strncmp(sendbuf, "quit", 4) == 0) //如果客户端发送的数据为"quit"，则退出。
             break;
         // command 檢查
-        int site[16][2];
+        int site[16][2] = {0};
         char command[256];
         memset(command, 0, sizeof(command));
-        int length = split(sendbuf, site);
+        printf("%s\n",sendbuf);
+        int length = split(sendbuf, site,256);
+        printf("%d\n",length);
         if (length == 0)
         {
             continue;
@@ -92,6 +96,15 @@ int main(int argc, char *argv[])
                     continue;
                 }
             }
+            if (strncmp(command, "delete", 6) == 0)
+            {
+                printf("%s\n",command);
+                if (length != 2)
+                {
+                    printf("wrong commad\n");
+                    continue;
+                }
+            }
         }
         send(sockCli, sendbuf, strlen(sendbuf) + 1, 0); //发送数据
         recv(sockCli, recvbuf, 256, 0);                 //接收来自服务器的数据
@@ -100,16 +113,29 @@ int main(int argc, char *argv[])
         {
             if (strcmp("error1", recvbuf))
             {
-                memset(current_path,0,sizeof(current_path));
-                strcpy(current_path,recvbuf);
+                memset(current_path, 0, sizeof(current_path));
+                strcpy(current_path, recvbuf);
             }
-            else {
+            else
+            {
                 printf("path does not exit\n");
             }
         }
         if (strncmp(command, "pwd", 3) == 0)
         {
-            printf("%s\n",recvbuf);
+            printf("%s\n", recvbuf);
+        }
+
+        if (strncmp(command, "delete", 6) == 0)
+        {
+            if (strcmp("error2", recvbuf))
+            {
+                
+            }
+            else
+            {
+                printf("file does not exit\n");
+            }
         }
         // printf("Ser:> %s\n",recvbuf);
     }

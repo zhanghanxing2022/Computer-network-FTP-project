@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         memset(sendbuf, 0, sizeof(sendbuf));
+        memset(recvbuf, 0, sizeof(recvbuf));
         recv(sockConn, recvbuf, 256, 0);
         // printf("Cli:> %s\n", recvbuf);
         // printf("Ser:>");
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
 
         // 解析
         int site[16][2];
-        int length = split(recvbuf, site);
+        int length = split(recvbuf, site,256);
         if (length == 0)
         {
             strcpy(sendbuf, "no command");
@@ -185,9 +186,24 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            // if (strncmp(sendbuf,"delete", 6) == 0) {
-
-            // }
+            if (strncmp(command,"delete", 6) == 0) {
+                char filename[256];
+                memset(filename, 0, sizeof(filename));
+                strncpy(filename, &recvbuf[site[1][0]], site[1][1] - site[1][0] + 1);
+                char delete_path[256];
+                memset(delete_path, 0, sizeof(delete_path));
+                strcpy(delete_path,current_path);
+                strcat(delete_path, "/");
+                strcat(delete_path, filename);
+                int result = remove(delete_path);
+                if (result == -1) {
+                    memset(sendbuf, 0, sizeof(sendbuf));
+                    strcpy(sendbuf, "error2");
+                }
+                else {
+                    memset(sendbuf, 0, sizeof(sendbuf));
+                }
+            }
             if (strncmp(command,"pwd", 3) == 0) {
                 memset(sendbuf, 0, sizeof(sendbuf));
                 strcpy(sendbuf, client_current_path);

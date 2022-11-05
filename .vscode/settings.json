@@ -6,7 +6,8 @@
         "string": "cpp",
         "iosfwd": "cpp",
         "stdexcept": "cpp",
-        "winsock2.h": "c"
+        "winsock2.h": "c",
+        "string.h": "c"
     },
     "editor.suggest.snippetsPreventQuickSuggestions": false
 }

@@ -1,7 +1,7 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <string.h>
-int split(char *str, int site[16][2])
-{
+int split(char *str, int site[16][2],int length)
+{   
     int start[256] = {0};
     int end[256] = {0};
     int start_p = 0;
@@ -11,7 +11,7 @@ int split(char *str, int site[16][2])
         start[start_p++] = 0;
     }
     int i;
-    for (i = 1; i < sizeof(str); i++)
+    for (i = 1; i < length; i++)
     {
         if (str[i] != ' ' && str[i - 1] == ' ')
         {
