@@ -1,6 +1,7 @@
 #include<unistd.h>
 #include<stdio.h>
 #include<string.h>
+#include"header/defines.h"
 #ifdef _WIN32
     #include<WinSock2.h>
     #include <ws2tcpip.h>
@@ -55,8 +56,12 @@ int main(int argc, char *argv[])
         printf("Cli:>");
         scanf("%[^\n]",sendbuf);
         fflush(stdin);
-        if(strncmp(sendbuf,"quit", 4) == 0)    //如果客户端发送的数据为"quit"，则退出。
-            break;
+        if(decode_in(sendbuf)==FTP_quit){
+            printf("Cli:>bye!");
+            exit(0);
+        //     Sleep(1000);
+        //     break;
+        }
         send(sockCli, sendbuf, strlen(sendbuf)+1, 0);   //发送数据
     }
     close(sockCli);       //关闭套接字

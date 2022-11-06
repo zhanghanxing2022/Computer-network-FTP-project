@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include"header/defines.h"
 #define SERVER_PORT 5050
 #define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
@@ -19,10 +20,10 @@
 
 #pragma pack(1) // 设置结构体1字节对齐**************
 
-struct MsgHeader
-{
-    /* data */
-};
+// struct MsgHeader
+// {
+//     /* data */
+// };
 #pragma pack()
 
 int main(int argc, char *argv[]){
@@ -81,8 +82,11 @@ int main(int argc, char *argv[]){
         printf("Ser:>");
         scanf("%[^\n]",sendbuf);
         fflush(stdin);
-        if(strncmp(sendbuf, "quit", 4) ==0)
+        if(decode_in(sendbuf)==FTP_quit){
+            printf("Ser:>bye!");
+            Sleep(1000);
             break;
+        }
         send(sockConn, sendbuf, strlen(sendbuf)+1, 0);
         recv(sockConn, recvbuf, 256, 0);
         printf("Cli:> %s\n", recvbuf);
