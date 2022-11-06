@@ -47,22 +47,22 @@ int main(int argc, char *argv[])
  
     char sendbuf[256];     //申请一个发送数据缓存区
     char recvbuf[256];     //申请一个接收数据缓存区
-    memset(sendbuf,0,sizeof(sendbuf));
-    memset(recvbuf,0,sizeof(recvbuf));
+    
     while(1)
     {
-        recv(sockCli, recvbuf, 256, 0);    //接收来自服务器的数据
-        printf("Ser:> %s\n",recvbuf);
+        memset(sendbuf,0,sizeof(sendbuf));
+        memset(recvbuf,0,sizeof(recvbuf));
         printf("Cli:>");
         scanf("%[^\n]",sendbuf);
         fflush(stdin);
+        send(sockCli, sendbuf, strlen(sendbuf)+1, 0);
+        recv(sockCli, recvbuf, 256, 0);
         if(decode_in(sendbuf)==FTP_quit){
-            printf("Cli:>bye!");
-            exit(0);
-        //     Sleep(1000);
-        //     break;
+            ftpCli_quit();
         }
-        send(sockCli, sendbuf, strlen(sendbuf)+1, 0);   //发送数据
+        if(decode_in(sendbuf)==FTP_ls){
+            ftpCli_ls(recvbuf);
+        }
     }
     close(sockCli);       //关闭套接字
     return 0;

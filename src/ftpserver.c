@@ -75,22 +75,22 @@ int main(int argc, char *argv[]){
 
     char sendbuf[256];     //申请一个发送数据缓存区
     char recvbuf[256];     //申请一个接收数据缓存区
-    memset(sendbuf,0,sizeof(sendbuf));
-    memset(recvbuf,0,sizeof(recvbuf));
+    
     while (1)
-    {
-        printf("Ser:>");
-        scanf("%[^\n]",sendbuf);
+    {   
+        memset(sendbuf,0,sizeof(sendbuf));
+        memset(recvbuf,0,sizeof(recvbuf));
         fflush(stdin);
-        if(decode_in(sendbuf)==FTP_quit){
-            printf("Ser:>bye!");
-            Sleep(1000);
-            break;
+        recv(sockConn, recvbuf, 256, 0);
+        if(decode_in(recvbuf)==FTP_quit){
+            ftpSer_quit();
+            // break;
+        }
+        if(decode_in(recvbuf)==FTP_ls){
+            ftpSer_ls(sendbuf);
+            
         }
         send(sockConn, sendbuf, strlen(sendbuf)+1, 0);
-        recv(sockConn, recvbuf, 256, 0);
-        printf("Cli:> %s\n", recvbuf);
-
     }
     close(sockSer);
     return 0;

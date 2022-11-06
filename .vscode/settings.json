@@ -8,5 +8,6 @@
         "stdexcept": "cpp",
         "winsock2.h": "c"
     },
-    "editor.suggest.snippetsPreventQuickSuggestions": false
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<string.h>
 #include "file.h"
+#include "dirent.h"
+#include <unistd.h>
 #define ORDER_SUM 8
 typedef enum Syntax_Cmd{
     FTP_get,
@@ -124,6 +126,37 @@ typedef struct MsgHeader
 //     }
 // }
 
+void ftpCli_ls(char*content){
+    printf("%s\n",content);
+
+}
+void ftpSer_ls(char*sendbuf){
+    int i = 0;
+    int filesize = 0;  
+    DIR *dir = NULL;  
+    char buf[256];
+    struct dirent *entry;  
+    dir = opendir(getcwd(buf,sizeof(buf)));//这里目前只是读取当前目录，等合并后还得切换目录测试一下，要使用pwd来得到dir才对
+        
+    while(entry=readdir(dir))  
+      	{  
+      		i++;
+            strcat(sendbuf,(char*)(entry->d_name));
+            strcat(sendbuf,"\t");
+     	}  
+    closedir(dir);    
+}  
+
+void ftpSer_quit(){
+    printf("Ser:>bye!");
+    sleep(1);
+    exit(0);
+}
+void ftpCli_quit(){
+    printf("Cli:>bye!");
+    sleep(1);
+    exit(0);
+}
 Syntax_Cmd decode_in(const char*argv){
     Syntax_Cmd res = FTP_error;
     for (int i = 0; i < 8; i++)
