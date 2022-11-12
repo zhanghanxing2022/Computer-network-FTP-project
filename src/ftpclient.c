@@ -19,21 +19,7 @@ const char Clientpath[] = "./ClientFile/";
 int Control_Connection(char* sendbuf, char* recvbuf, int sockCli);
 int Client_get(char* sendbuf, char* recvbuf, int sockCli);
 int Client_put(char* sendbuf, char* recvbuf, int sockCli);
-int Client_ls(char* sendbuf, char* recvbuf, int sockCli);
 void printrecv(char* sendbuf, char* recvbuf, int sockCli);
-
-//decode command type
-int command_type(char* cmd){
-    if(strncmp(cmd,"get ", 4) == 0) return 0;
-    if(strncmp(cmd,"put ", 4) == 0) return 1;
-    if(strncmp(cmd,"delete ", 7) == 0) return 2;
-    if(strncmp(cmd,"ls", 2) == 0) return 3;
-    if(strncmp(cmd,"cd ", 3) == 0) return 4;
-    if(strncmp(cmd,"mkdir ", 6) == 0) return 5;
-    if(strncmp(cmd,"pwd", 3) == 0) return 6;
-    if(strncmp(cmd,"quit", 4) == 0) return 7;
-    return -1;
-}
 
 int main(int argc, char *argv[])
 {
@@ -122,8 +108,14 @@ int main(int argc, char *argv[])
                 break;
             //quit
             case 7:
+                if(Control_Connection(sendbuf, recvbuf, sockCli)==-1){
+                    printf("Control Connection failed\n");
+                    break;
+                }
                 printf("Bye!\n");
-                close(sockCli);
+                sleep(1);
+                exit(0);
+                //close(sockCli);
                 return 0;
             default:
                 //printf("Invalid command\n");
@@ -137,10 +129,12 @@ int main(int argc, char *argv[])
 int Control_Connection(char* sendbuf, char* recvbuf, int sockCli){
     //send control connection
     struct MsgHeader ControlMsg;
+    memset(&ControlMsg,0,sizeof(ControlMsg));
     ControlMsg.MsgType=Control;
     ControlMsg.Cmdtype=decode_in(sendbuf);
     ControlMsg.data_size=strlen(sendbuf)-OtableLen[ControlMsg.Cmdtype];
     ControlMsg.last=true;
+    ControlMsg.error=false;
     memcpy(ControlMsg.data,sendbuf+OtableLen[ControlMsg.Cmdtype],strlen(sendbuf)-OtableLen[ControlMsg.Cmdtype]);
     send(sockCli, (char*)&ControlMsg, sizeof(struct MsgHeader)+1, 0);
     
@@ -148,16 +142,20 @@ int Control_Connection(char* sendbuf, char* recvbuf, int sockCli){
     struct MsgHeader* recv_msg;
     recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
     recv_msg=(MsgHeader*)recvbuf;
+    if(recv_msg->error) printf("%s\n",recv_msg->data);
+    else if(recv_msg->Cmdtype==FTP_delete||recv_msg->Cmdtype==FTP_mkdir||recv_msg->Cmdtype==FTP_cd||recv_msg->Cmdtype==FTP_quit)printf("Done\n");
     if(recv_msg->last==1) return 0;//connection success
     else return -1;
 }
 
 int Client_get(char* sendbuf, char* recvbuf, int sockCli){
-     if(Control_Connection(sendbuf, recvbuf, sockCli)==-1){
+    if(Control_Connection(sendbuf, recvbuf, sockCli)==-1){
         printf("Control Connection failed\n");
         return -1;
     }
-
+    struct MsgHeader SendMsg;
+    SendMsg.Cmdtype=Control;
+    SendMsg.MsgType=FTP_get;
     struct MsgHeader *RecvMsg = (struct MsgHeader*)recvbuf;
     RecvMsg->last = false;
     Readbolck recvb;
@@ -166,13 +164,20 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
     strcat(recvb.filepath, sendbuf + 4);
     while (RecvMsg->last==false)
     {
-        recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);    //接收来自服务器的数据
+        do{
+            recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);    //接收来自服务器的数据
+            memset(&SendMsg,0,sizeof(SendMsg));
+            SendMsg.error=RecvMsg->error;
+            send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+        }while(RecvMsg->error==true);
+        
         printf("Cli>recv:%d\n", RecvMsg->data_size);
         recvb.cur_size = RecvMsg->data_size;
         recvb.cache = RecvMsg->data;
         printf("%s\n",RecvMsg->data);
         recvb.method = BY_ASCII;
         put_in_file(&recvb,recvb.cur_size);
+        //send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
     }
 }
 
@@ -184,10 +189,10 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
 
     //Data Connection
     struct MsgHeader DataMsg;
+    memset(&DataMsg,0,sizeof(DataMsg));
     DataMsg.MsgType=Data;
     DataMsg.Cmdtype=FTP_put;
     DataMsg.data_size=0;
-    //只有1个报文
     DataMsg.last=0;
 
     //read from file and store in block
@@ -195,34 +200,25 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
     memset(&block,0,sizeof(block));
     char *buf = (char*)calloc(CACHE_SIZE, sizeof(char));
     block.cache=buf;
-    strncpy(block.filepath,"ClientFile/",11);
-    strncpy(block.filepath+11, sendbuf + 4, CACHE_SIZE-4);
+    strncpy(block.filepath, Clientpath,strlen(Clientpath));
+    strcat(block.filepath, sendbuf + 4);
+
+    //recevice
+    struct MsgHeader* recv_msg;
+    recv_msg=(MsgHeader*)recvbuf;
     while(block.error==false&&block.lst == false)
     {
         read_from_file(&block, CACHE_SIZE);
         DataMsg.data_size=block.cur_size;
         strcpy(DataMsg.data,block.cache);        
         DataMsg.last=block.lst;
-        send(sockCli, (char*)&DataMsg, sizeof(struct MsgHeader)+1, 0);
+        do{
+            send(sockCli, (char*)&DataMsg, sizeof(struct MsgHeader)+1, 0);
+            recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
+        }while(recv_msg->error==true);
     }
-    //recevice
-    struct MsgHeader* recv_msg;
-    recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
-    recv_msg=(MsgHeader*)recvbuf;
     if(recv_msg->last==1) return 0;
     else return -1;
-}
-
-int Client_ls(char* sendbuf, char* recvbuf, int sockCli){
-    if(Control_Connection(sendbuf, recvbuf, sockCli)==-1){
-        printf("Control Connection failed\n");
-        return -1;
-    }
-    //recevice
-    struct MsgHeader* recv_msg;
-    recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
-    recv_msg=(MsgHeader*)recvbuf;
-    printf("%s\n",recv_msg->data);
 }
 
 void printrecv(char* sendbuf, char* recvbuf, int sockCli){
