@@ -83,16 +83,29 @@ int main(int argc, char *argv[]){
         recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
         struct MsgHeader* ControlMsg=(struct MsgHeader*) recvbuf;
         //Control Connection response
-        struct MsgHeader recvMsg;
-        recvMsg.last=1;
-        send(sockConn, (char*)&recvMsg, sizeof(struct MsgHeader)+1, 0);
+        //struct MsgHeader recvMsg;
+        //recvMsg.last=1;
+        //send(sockConn, (char*)&recvMsg, sizeof(struct MsgHeader)+1, 0);
         
+        //Control Connection response
+        memset(&SendMsg,0,sizeof(SendMsg));
+        SendMsg.MsgType=ControlMsg->Cmdtype;
+        SendMsg.last=true;
+        SendMsg.error=false;
+
         struct Readbolck block;
         memset(&block,0,sizeof(block));
         switch(ControlMsg->Cmdtype){
             case FTP_get:
-                block.cache = SendMsg.data;
+                //Control msg receviced
+                SendMsg.data_size=0;
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+                
+                //data msg
                 memset(SendMsg.data,0,sizeof(SendMsg.data));
+                SendMsg.MsgType=Data;
+                SendMsg.Cmdtype=FTP_get;
+                block.cache = SendMsg.data;
                 block.method = BY_BIT;
                 strncpy(block.filepath,curpath,strlen(curpath));
                 strcat(block.filepath,"/");
@@ -106,28 +119,41 @@ int main(int argc, char *argv[]){
                     SendMsg.data_size = block.cur_size;
                     SendMsg.last = block.lst;
                     printf("Ser>len:%d\n",block.cur_size);
-                    send(sockConn, (char*)&SendMsg, sizeof(MsgHeader)+1, 0);
+                    do{
+                        send(sockConn, (char*)&SendMsg, sizeof(MsgHeader)+1, 0);
+                        recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
+                    }while(ControlMsg->error==true);
                 }
                 break;
             case FTP_put:
+                SendMsg.data_size=0;
+                SendMsg.error=false;
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+
                 //get filename
                 strncpy(block.filepath,curpath,strlen(curpath));
                 strcat(block.filepath,"/");
                 strcat(block.filepath, ControlMsg->data);
-                //strncpy(block.filepath,"ServerFile/",11);
-                //strncpy(block.filepath+11,ControlMsg->data,ControlMsg->data_size);
                 
                 //Data Receive
                 struct MsgHeader* DataMsg;
-                do{
-                    recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
-                    DataMsg=(struct MsgHeader*) recvbuf;
+                DataMsg=(struct MsgHeader*) recvbuf;
+                DataMsg->last=false;
+
+                memset(&SendMsg.data,0,SendMsg.data_size);
+                SendMsg.data_size=0;
+                SendMsg.error=false;
+
+                while(DataMsg->last==false){
+                    //首先确定DataMsg->error==false
+                    do{
+                        recv(sockConn, recvbuf, sizeof(struct MsgHeader)+1, 0);
+                        SendMsg.error=DataMsg->error;
+                        send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+                    }while(DataMsg->error==true);
                     block.cache=DataMsg->data;
                     put_in_file(&block,DataMsg->data_size);
-                }while(DataMsg->last==0);
-
-                //Response
-                send(sockConn, (char*)&recvMsg, sizeof(struct MsgHeader)+1, 0);
+                }
                 printf("\n");
                 break;
             case FTP_delete:{
@@ -139,15 +165,26 @@ int main(int argc, char *argv[]){
                 strcat(delete_path, ControlMsg->data);
                 if(remove(delete_path)==-1){
                     printf("error\n");
+                    memcpy(SendMsg.data,"fail to delete",15);
+                    SendMsg.data_size=15;
+                    SendMsg.error=true;
                 }
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
                 break;
             }
             case FTP_ls:{
+                //Control msg
+                SendMsg.data_size=0;
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+
+                //Data msg
+                SendMsg.Cmdtype=Data;
+
                 int i = 0;
                 int filesize = 0;  
                 DIR *dir = NULL;  
                 char buf[256];
-                struct dirent *entry;  
+                struct dirent *entry;
                 dir = opendir(curpath);
                 while(entry=readdir(dir))  
                     {  
@@ -167,6 +204,10 @@ int main(int argc, char *argv[]){
                 if ((dir = opendir(curpath)) == NULL)
                 {
                     printf("file does not exit");
+                    SendMsg.error=true;
+                    memcpy(SendMsg.data,"curpath error",14);
+                    SendMsg.data_size=14;
+                    send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
                 }
                 else{
                     int flag=0;
@@ -208,7 +249,12 @@ int main(int argc, char *argv[]){
                     // 文件夾不存在
                     if (!flag) {
                         printf("No such path\n");
+                        
+                    SendMsg.error=true;
+                    memcpy(SendMsg.data,"no such path",13);
+                    SendMsg.data_size=13;
                     }
+                    send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
                     closedir(dir);
                 }
                 break;
@@ -217,24 +263,34 @@ int main(int argc, char *argv[]){
                 strncpy(block.filepath,"ServerFile/",11);
                 strncpy(block.filepath+11,ControlMsg->data,ControlMsg->data_size);
                 if(_access(block.filepath,0)==-1){
-                    mkdir(block.filepath);
+                    if(mkdir(block.filepath)==-1){
+                        SendMsg.error=true;
+                        memcpy(SendMsg.data,"fail to make a new directory",29);
+                        SendMsg.data_size=29;
+                        printf("fail to make a new directory\n");
+                    }
+                    else printf("create directory %s\n",ControlMsg->data);
                 }
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
                 printf("\n");
                 break;
             case FTP_pwd:
+                //Control receive
+                SendMsg.error=false;
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+
                 //send working directory to client
-                memset(&SendMsg, 0, sizeof(struct MsgHeader));
+                SendMsg.Cmdtype=Data;
                 memcpy(SendMsg.data,curpath,sizeof(curpath));
+                SendMsg.data_size=sizeof(curpath);
                 send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
                 break;
+            case FTP_quit:
+                send(sockConn, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+                printf("Bye!\n");
+                sleep(1);
+                exit(0);
         }
-
-        
-
-
-        
-        
-
         
     }
     close(sockSer);
