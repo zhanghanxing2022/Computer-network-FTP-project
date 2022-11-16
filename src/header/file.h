@@ -47,12 +47,6 @@ FILE_MODE file_type(const char* filename)
 }
 void read_from_file(Readbolck*block,int len){
     memset(block->cache,0,CACHE_SIZE);
-    block->descriptor=file_type(block->filepath);
-    if(block->descriptor == NOT_FOUND){
-        block->error = true;
-        printf("No such file\n");
-        return;
-    }
     fp1 = fopen(block->filepath,block->method==BY_ASCII?"r":"rb");
     if(fp1 == NULL){
         block->error = true;
@@ -67,13 +61,14 @@ void read_from_file(Readbolck*block,int len){
     }
     block->tail = ftell(fp1);
     fclose(fp1);
+    return;
 }
 
 void put_in_file(Readbolck*block,int len){
     if(block->error==true){
         return;
     }
-    fp2 = fopen(block->filepath,block->method==BY_ASCII?"a+":"ab+");
+    fp2 = fopen(block->filepath,block->method==BY_ASCII?"w+":"wb+");//如果文件存在，则替换原文件
     if(fp2 == NULL){
         block->error = true;
         return;
