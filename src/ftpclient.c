@@ -131,11 +131,11 @@ int Control_Connection(char* sendbuf, char* recvbuf, int sockCli){
     struct MsgHeader ControlMsg;
     memset(&ControlMsg,0,sizeof(ControlMsg));
     ControlMsg.MsgType=Control;
-    ControlMsg.Cmdtype=decode_in(sendbuf);
-    ControlMsg.data_size=strlen(sendbuf)-OtableLen[ControlMsg.Cmdtype];
+    ControlMsg.s_cmd=decode_in(sendbuf);
+    ControlMsg.data_size=strlen(sendbuf)-OtableLen[ControlMsg.s_cmd];
     ControlMsg.last=true;
     ControlMsg.error=false;
-    memcpy(ControlMsg.data,sendbuf+OtableLen[ControlMsg.Cmdtype],strlen(sendbuf)-OtableLen[ControlMsg.Cmdtype]);
+    memcpy(ControlMsg.data,sendbuf+OtableLen[ControlMsg.s_cmd],strlen(sendbuf)-OtableLen[ControlMsg.s_cmd]);
     send(sockCli, (char*)&ControlMsg, sizeof(struct MsgHeader)+1, 0);
     
     //recevice
@@ -143,7 +143,7 @@ int Control_Connection(char* sendbuf, char* recvbuf, int sockCli){
     recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
     recv_msg=(MsgHeader*)recvbuf;
     if(recv_msg->error) printf("%s\n",recv_msg->data);
-    else if(recv_msg->Cmdtype==FTP_delete||recv_msg->Cmdtype==FTP_mkdir||recv_msg->Cmdtype==FTP_cd||recv_msg->Cmdtype==FTP_quit)printf("Done\n");
+    else if(recv_msg->s_cmd==FTP_delete||recv_msg->s_cmd==FTP_mkdir||recv_msg->s_cmd==FTP_cd||recv_msg->s_cmd==FTP_quit)printf("Done\n");
     if(recv_msg->last==1) return 0;//connection success
     else return -1;
 }
@@ -154,7 +154,7 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         return -1;
     }
     struct MsgHeader SendMsg;
-    SendMsg.Cmdtype=Control;
+    SendMsg.s_cmd=Control;
     SendMsg.MsgType=FTP_get;
     struct MsgHeader *RecvMsg = (struct MsgHeader*)recvbuf;
     RecvMsg->last = false;
@@ -182,6 +182,22 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
 }
 
 int Client_put(char* sendbuf, char* recvbuf, int sockCli){
+    //read from file and store in block
+    struct Readbolck block;
+    memset(&block,0,sizeof(block));
+    char *buf = (char*)calloc(CACHE_SIZE, sizeof(char));
+    block.cache=buf;
+    strncpy(block.filepath, Clientpath,strlen(Clientpath));
+    strcat(block.filepath, sendbuf + 4);
+
+    //is the file exists?
+    block.descriptor=file_type(block.filepath);
+    if(block.descriptor == NOT_FOUND){
+        block.error = true;
+        printf("No such file\n");
+        return -1;
+    }
+
     if(Control_Connection(sendbuf, recvbuf, sockCli)==-1){
         printf("Control Connection failed\n");
         return -1;
@@ -191,17 +207,10 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
     struct MsgHeader DataMsg;
     memset(&DataMsg,0,sizeof(DataMsg));
     DataMsg.MsgType=Data;
-    DataMsg.Cmdtype=FTP_put;
+    DataMsg.s_cmd=FTP_put;
     DataMsg.data_size=0;
     DataMsg.last=0;
 
-    //read from file and store in block
-    struct Readbolck block;
-    memset(&block,0,sizeof(block));
-    char *buf = (char*)calloc(CACHE_SIZE, sizeof(char));
-    block.cache=buf;
-    strncpy(block.filepath, Clientpath,strlen(Clientpath));
-    strcat(block.filepath, sendbuf + 4);
 
     //recevice
     struct MsgHeader* recv_msg;
