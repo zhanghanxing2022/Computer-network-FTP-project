@@ -15,6 +15,7 @@
 #define SERVER_PORT  5050
 #define SERVER_IP    "127.0.0.1"
 const char Clientpath[] = "./ClientFile/";
+char current_path[256];
 
 int Control_Connection(char* sendbuf, char* recvbuf, int sockCli);
 int Client_get(char* sendbuf, char* recvbuf, int sockCli);
@@ -46,25 +47,62 @@ int main(int argc, char *argv[])
     //创建一个与服务器的连接，并检测连接是否成功
     socklen_t addrlen = sizeof(struct sockaddr);
     int res = connect(sockCli,(struct sockaddr*)&addrSer, addrlen);
-    if(res == -1)
+    // if(res == -1)
+    //     perror("connect");
+    // else
+    //     printf("Client Connect Server OK.\n");
+    while (res == -1)
+    {
         perror("connect");
-    else
-        printf("Client Connect Server OK.\n");
+        res = connect(sockCli, (struct sockaddr *)&addrSer, addrlen);
+    }
+    printf("Client Connect Server OK.\n");
  
     char sendbuf[sizeof(struct MsgHeader)+1];     //申请一个发送数据缓存区
     char recvbuf[sizeof(struct MsgHeader)+1];     //申请一个接收数据缓存区
     memset(sendbuf,0,sizeof(sendbuf));
     memset(recvbuf,0,sizeof(recvbuf));
+    // 初始化路径名
+    memset(current_path, 0, sizeof(current_path));
+    strcpy(current_path, "root");
 
     struct MsgHeader msg;
     while(1)
     {
-        printf("Cli:>");
-        scanf("%[^\n]",sendbuf);
+        // 需要清空sendbuf
+        memset(sendbuf, 0, sizeof(sendbuf));
+        printf("%s:>", current_path);
+        scanf("%[^\n]", sendbuf);
+
         //清空缓冲区
         fflush(stdin);
-        Syntax_Cmd s_cmd=FTP_error;
-        s_cmd=decode_in(sendbuf);
+        Syntax_Cmd s_cmd = FTP_error;
+
+        int site[16][2] = {0};
+        int param_num = check_param(sendbuf, site, 256);
+        if (param_num == 0)
+            continue;
+        char command[site[0][1] - site[0][0] + 1];
+        strncpy(command, &sendbuf[site[0][0]], site[0][1] - site[0][0] + 1);
+        s_cmd = check_command(command);
+
+        // 检测指令是否正确
+        if (s_cmd == FTP_error)
+        {
+            printf("zsh: command not found\n");
+            continue;
+        }
+        else if (s_cmd == FTP_quit)
+        {
+            printf("%s:>Bye!\n", current_path);
+            break;
+        }
+        // 判断参数个数是否正确,比如 "cd file_a b"返回3，是违法指令
+        if (param_num != ParamNum[s_cmd])
+        {
+            printf("wrong command!\n");
+            continue;
+        }
 
         switch(s_cmd){
             //get
@@ -126,26 +164,45 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int Control_Connection(char* sendbuf, char* recvbuf, int sockCli){
-    //send control connection
+int Control_Connection(char *sendbuf, char *recvbuf, int sockCli)
+{
+    int site[16][2] = {0};
+    int param_num = check_param(sendbuf, site, 256);
+    char command[site[0][1] - site[0][0] + 1];
+    strncpy(command, &sendbuf[site[0][0]], site[0][1] - site[0][0] + 1);
+    Syntax_Cmd s_cmd = check_command(command);
+    // send control connection
     struct MsgHeader ControlMsg;
-    memset(&ControlMsg,0,sizeof(ControlMsg));
-    ControlMsg.MsgType=Control;
-    ControlMsg.s_cmd=decode_in(sendbuf);
-    ControlMsg.data_size=strlen(sendbuf)-OtableLen[ControlMsg.s_cmd];
-    ControlMsg.last=true;
-    ControlMsg.error=false;
-    memcpy(ControlMsg.data,sendbuf+OtableLen[ControlMsg.s_cmd],strlen(sendbuf)-OtableLen[ControlMsg.s_cmd]);
-    send(sockCli, (char*)&ControlMsg, sizeof(struct MsgHeader)+1, 0);
-    
-    //recevice
-    struct MsgHeader* recv_msg;
-    recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
-    recv_msg=(MsgHeader*)recvbuf;
-    if(recv_msg->error) printf("%s\n",recv_msg->data);
-    else if(recv_msg->s_cmd==FTP_delete||recv_msg->s_cmd==FTP_mkdir||recv_msg->s_cmd==FTP_cd||recv_msg->s_cmd==FTP_quit)printf("Done\n");
-    if(recv_msg->last==1) return 0;//connection success
-    else return -1;
+    memset(&ControlMsg, 0, sizeof(ControlMsg));
+    ControlMsg.MsgType = Control;
+    ControlMsg.s_cmd = s_cmd;
+    ControlMsg.data_size = strlen(sendbuf) - OtableLen[ControlMsg.s_cmd];
+    ControlMsg.last = true;
+    ControlMsg.error = false;
+    // 因为ls后面没有参数
+    if (param_num == 2)memcpy(ControlMsg.data, &sendbuf[site[1][0]], site[1][1] - site[1][0] + 1);
+    // memcpy(ControlMsg.data, sendbuf + OtableLen[ControlMsg.s_cmd], strlen(sendbuf) - OtableLen[ControlMsg.s_cmd]);
+    send(sockCli, (char *)&ControlMsg, sizeof(struct MsgHeader) + 1, 0);
+
+    // recevice
+    struct MsgHeader *recv_msg;
+    recv(sockCli, recvbuf, sizeof(struct MsgHeader) + 1, 0);
+    recv_msg = (MsgHeader *)recvbuf;
+    if (recv_msg->error)
+        printf("%s\n", recv_msg->data);
+    else if (recv_msg->s_cmd == FTP_delete || recv_msg->s_cmd == FTP_mkdir || recv_msg->s_cmd == FTP_cd || recv_msg->s_cmd == FTP_quit)
+    {
+        if (recv_msg->s_cmd == FTP_cd)
+        {
+            memset(current_path, 0, sizeof(current_path));
+            strcpy(current_path, recv_msg->data);
+        }
+        // printf("Done\n");
+    }
+    if (recv_msg->last == 1)
+        return 0; // connection success
+    else
+        return -1;
 }
 
 int Client_get(char* sendbuf, char* recvbuf, int sockCli){
