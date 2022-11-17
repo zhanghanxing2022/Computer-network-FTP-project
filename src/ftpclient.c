@@ -210,26 +210,22 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         printf("Control Connection failed\n");
         return -1;
     }
-    struct MsgHeader SendMsg;
-    SendMsg.s_cmd=FTP_get;
-    SendMsg.MsgType=Data;
+    
     struct MsgHeader *RecvMsg = (struct MsgHeader*)recvbuf;
     RecvMsg->last = false;
     Readbolck recvb;
     memset(&recvb,0,sizeof(recvb));
     strncpy(recvb.filepath, Clientpath,strlen(Clientpath));
     strcat(recvb.filepath, sendbuf + 4);
-    remove(recvb.filepath);
+    remove(recvb.filepath);//如果存在，则删除文件
     while (RecvMsg->last==false)
     {   
-        do{
-            recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);    //接收来自服务器的数据
-            memset(&SendMsg,0,sizeof(SendMsg));
-            SendMsg.error=RecvMsg->error;
-            // send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
-        }while(RecvMsg->error==true);
+        recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);    //接收来自服务器的数据
+        if(RecvMsg->error == true ){
+            printf("%s\n",RecvMsg->data);
+            return 1;
+        }
         
-        printf("%s>recv:%d\n",current_path, RecvMsg->data_size);
         recvb.cur_size = RecvMsg->data_size;
         recvb.cache = RecvMsg->data;
         printf("%s\n",RecvMsg->data);

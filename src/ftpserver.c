@@ -124,7 +124,14 @@ int main(int argc, char *argv[])
             strcat(block.filepath, "/");
             strcat(block.filepath, ControlMsg->data);
             printf("get %s\n", block.filepath);
-
+            if(file_type(block.filepath)!=A_FILE){
+                SendMsg.error = true;
+                SendMsg.last = true;
+                memset(SendMsg.data,0,sizeof(SendMsg.data));
+                strcat(SendMsg.data, file_type(block.filepath)==A_DIR?  "File not Found.Only find a dir.":"File not Found.");
+                send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
+                break;
+            }
             while (block.lst == false && block.error == false)
             {
                 read_from_file(&block, CACHE_SIZE);
