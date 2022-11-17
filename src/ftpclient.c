@@ -178,7 +178,6 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         printf("%s\n",RecvMsg->data);
         recvb.method = BY_ASCII;
         put_in_file(&recvb,recvb.cur_size);
-        //send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
     }
 }
 
@@ -211,7 +210,6 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
     DataMsg.s_cmd=FTP_put;
     DataMsg.data_size=0;
     DataMsg.last=0;
-
 
     //recevice
     struct MsgHeader* recv_msg;
