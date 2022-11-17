@@ -216,7 +216,14 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
     Readbolck recvb;
     memset(&recvb,0,sizeof(recvb));
     strncpy(recvb.filepath, Clientpath,strlen(Clientpath));
-    strcat(recvb.filepath, sendbuf + 4);
+    for(int i=4; i<strlen(sendbuf);i++){
+        if(sendbuf[i]=='\\'){
+            sendbuf[i] = '/';
+        }
+    }
+    char *p = strrchr(sendbuf+4,'/');
+    p = p==NULL?sendbuf + 3:p;
+    strcat(recvb.filepath, p+1);
     remove(recvb.filepath);//如果存在，则删除文件
     while (RecvMsg->last==false)
     {   
@@ -228,7 +235,6 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         
         recvb.cur_size = RecvMsg->data_size;
         recvb.cache = RecvMsg->data;
-        printf("%s\n",RecvMsg->data);
         recvb.method = BY_ASCII;
         put_in_file(&recvb,recvb.cur_size);
     }

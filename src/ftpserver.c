@@ -135,10 +135,8 @@ int main(int argc, char *argv[])
             while (block.lst == false && block.error == false)
             {
                 read_from_file(&block, CACHE_SIZE);
-                printf("Ser>data_size:%d\n", block.cur_size);
                 SendMsg.data_size = block.cur_size;
                 SendMsg.last = block.lst;
-                printf("Ser>len:%d\n", block.cur_size);
                 do
                 {
                     send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
