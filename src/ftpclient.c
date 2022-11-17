@@ -1,7 +1,7 @@
 #include<unistd.h>
 #include<stdio.h>
 #include<string.h>
-#include"header\defines.h"
+#include"header/defines.h"
 #ifdef _WIN32
     #include<WinSock2.h>
     #include <ws2tcpip.h>
@@ -221,15 +221,15 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
     strcat(recvb.filepath, sendbuf + 4);
     remove(recvb.filepath);
     while (RecvMsg->last==false)
-    {
+    {   
         do{
             recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);    //接收来自服务器的数据
             memset(&SendMsg,0,sizeof(SendMsg));
             SendMsg.error=RecvMsg->error;
-            send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
+            // send(sockCli, (char*)&SendMsg, sizeof(struct MsgHeader)+1, 0);
         }while(RecvMsg->error==true);
         
-        printf("Cli>recv:%d\n", RecvMsg->data_size);
+        printf("%s>recv:%d\n",current_path, RecvMsg->data_size);
         recvb.cur_size = RecvMsg->data_size;
         recvb.cache = RecvMsg->data;
         printf("%s\n",RecvMsg->data);

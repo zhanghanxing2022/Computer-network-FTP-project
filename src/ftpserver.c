@@ -16,7 +16,7 @@
 #define SERVER_IP "127.0.0.1"
 #define QUEUE_SIZE 5
 const char Serpath[] = "ServerFile";
-#include "header\defines.h"
+#include "header/defines.h"
 #include <dirent.h>
 
 // 当前路径
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
                 do
                 {
                     send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
-                    recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
+                    // recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
                 } while (ControlMsg->error == true);
             }
             break;
@@ -204,7 +204,8 @@ int main(int argc, char *argv[])
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
 
             // Data msg
-            SendMsg.s_cmd = Data;
+            SendMsg.s_cmd = FTP_ls;
+            SendMsg.MsgType = Data;
 
             int i = 0;
             int filesize = 0;
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
             memset(buf, 0, 256);
             struct dirent *entry;
             dir = opendir(curpath);
-            while (entry = readdir(dir))
+            while ((entry = readdir(dir)))
             {
                 i++;
                 strcat(buf, (char *)(entry->d_name));
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
                 int flag = 0;
                 struct dirent *entry;
                 char *filename = ControlMsg->data;
-                while (entry = readdir(dir))
+                while ((entry = readdir(dir))!=NULL)
                 {
                     if (strcmp(filename, entry->d_name) == 0)
                     {
@@ -316,9 +317,17 @@ int main(int argc, char *argv[])
             // strncpy(block.filepath,"ServerFile/",11);
             strncpy(block.filepath + strlen(curpath), "/", 1);
             strncpy(block.filepath + strlen(curpath) + 1, ControlMsg->data, ControlMsg->data_size);
+            #ifdef _WIN32 
             if (_access(block.filepath, 0) == -1)
+            #elif defined __APPLE__
+            if (access(block.filepath, 0) == -1)
+            #endif
             {
+                #ifdef _WIN32
                 if (mkdir(block.filepath) == -1)
+                #elif defined __APPLE__
+                if (mkdir(block.filepath,0777) == -1)
+                #endif
                 {
                     SendMsg.error = true;
                     memcpy(SendMsg.data, "fail to make a new directory", 29);
@@ -344,7 +353,8 @@ int main(int argc, char *argv[])
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
 
             // send working directory to client
-            SendMsg.s_cmd = Data;
+            SendMsg.s_cmd = FTP_pwd;
+            SendMsg.MsgType = Data;
             memcpy(SendMsg.data, curpath, sizeof(curpath));
             SendMsg.data_size = sizeof(curpath);
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
@@ -354,6 +364,9 @@ int main(int argc, char *argv[])
             printf("Bye!\n");
             sleep(1);
             exit(0);
+            break;
+        default:
+            break;
         }
     }
     close(sockSer);
