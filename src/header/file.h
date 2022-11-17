@@ -55,7 +55,6 @@ void read_from_file(Readbolck*block,int len){
     fseek(fp1,block->tail,SEEK_SET);
     
     block->cur_size = fread(block->cache,sizeof(char),255,fp1);
-    
     if(feof(fp1)!=0){
         block->lst = true;
     }
@@ -68,7 +67,7 @@ void put_in_file(Readbolck*block,int len){
     if(block->error==true){
         return;
     }
-    fp2 = fopen(block->filepath,block->method==BY_ASCII?"w+":"wb+");//如果文件存在，则替换原文件
+    fp2 = fopen(block->filepath,block->method==BY_ASCII?"a+":"ab+");//如果文件存在，则替换原文件
     if(fp2 == NULL){
         block->error = true;
         return;
