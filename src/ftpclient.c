@@ -154,14 +154,15 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         return -1;
     }
     struct MsgHeader SendMsg;
-    SendMsg.s_cmd=Control;
-    SendMsg.MsgType=FTP_get;
+    SendMsg.s_cmd=FTP_get;
+    SendMsg.MsgType=Data;
     struct MsgHeader *RecvMsg = (struct MsgHeader*)recvbuf;
     RecvMsg->last = false;
     Readbolck recvb;
     memset(&recvb,0,sizeof(recvb));
     strncpy(recvb.filepath, Clientpath,strlen(Clientpath));
     strcat(recvb.filepath, sendbuf + 4);
+    remove(recvb.filepath);
     while (RecvMsg->last==false)
     {
         do{
