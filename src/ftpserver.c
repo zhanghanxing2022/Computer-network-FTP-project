@@ -169,13 +169,10 @@ int main(int argc, char *argv[])
             while (DataMsg->last == false)
             {
                 //首先确定DataMsg->error==false
-                do
-                {
-                    recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
-                    SendMsg.error = DataMsg->error;
-                    send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-                } while (DataMsg->error == true);
+                recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
+                   
                 block.cache = DataMsg->data;
+                block.method =BY_BIT;
                 put_in_file(&block, DataMsg->data_size);
             }
             printf("\n");
