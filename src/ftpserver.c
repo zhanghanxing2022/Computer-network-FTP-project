@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     listen(sockSer, QUEUE_SIZE);
 
-    printf("Server Wait Client Accept………\n ");
+    printf("Server Wait Client Accept\n");
 
     int sockConn = accept(sockSer, (struct sockaddr *)&addrCli, &addrlen);
     if (sockConn == -1)
@@ -123,15 +123,17 @@ int main(int argc, char *argv[])
             strncpy(block.filepath, curpath, strlen(curpath));
             strcat(block.filepath, "/");
             strcat(block.filepath, ControlMsg->data);
-            printf("get %s\n", block.filepath);
             if(file_type(block.filepath)!=A_FILE){
                 SendMsg.error = true;
                 SendMsg.last = true;
                 memset(SendMsg.data,0,sizeof(SendMsg.data));
+                if(file_type(block.filepath)==A_DIR) printf("File not Found.Only find a dir.\n");
+                else printf("File not Found.\n");
                 strcat(SendMsg.data, file_type(block.filepath)==A_DIR?  "File not Found.Only find a dir.":"File not Found.");
                 send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
                 break;
             }
+            printf("get %s\n", block.filepath);
             while (block.lst == false && block.error == false)
             {
                 read_from_file(&block, CACHE_SIZE);
@@ -175,7 +177,7 @@ int main(int argc, char *argv[])
                 block.method =BY_BIT;
                 put_in_file(&block, DataMsg->data_size);
             }
-            printf("\n");
+            printf("put %s\n", block.filepath);
             break;
         case FTP_delete:
         {
@@ -187,13 +189,14 @@ int main(int argc, char *argv[])
             strcat(delete_path, ControlMsg->data);
             if (remove(delete_path) == -1)
             {
-                printf("error\n");
-                memcpy(SendMsg.data, "fail to delete", 15);
-                SendMsg.data_size = 15;
+                printf("can't delete the directory\n");
+                memcpy(SendMsg.data, "can't delete the directory", 27);
+                SendMsg.data_size = 29;
                 SendMsg.error = true;
             }
             else
             {
+                printf("delete %s\n",ControlMsg->data);
                 SendMsg.error = false;
             }
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
@@ -347,7 +350,6 @@ int main(int argc, char *argv[])
                 printf("the directory exists\n");
             }
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-            printf("\n");
             break;
         case FTP_pwd:
             // Control receive
@@ -360,6 +362,8 @@ int main(int argc, char *argv[])
             memcpy(SendMsg.data, curpath, sizeof(curpath));
             SendMsg.data_size = sizeof(curpath);
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
+
+            printf("pwd:%s\n",SendMsg.data);
             break;
         case FTP_quit:
             send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
