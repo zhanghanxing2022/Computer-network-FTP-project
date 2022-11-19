@@ -82,7 +82,8 @@ int main(int argc, char *argv[])
         int param_num = check_param(sendbuf, site, 256);
         if (param_num == 0)
             continue;
-        char command[site[0][1] - site[0][0] + 1];
+        char* command = malloc(sizeof(char) * (site[0][1] - site[0][0] + 1));
+        memset(command,0,sizeof(command));
         strncpy(command, &sendbuf[site[0][0]], site[0][1] - site[0][0] + 1);
         s_cmd = check_command(command);
 
@@ -216,7 +217,8 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
     Readbolck recvb;
     memset(&recvb,0,sizeof(recvb));
     strncpy(recvb.filepath, Clientpath,strlen(Clientpath));
-    for(int i=4; i<strlen(sendbuf);i++){
+    int i;
+    for(i=4; i<strlen(sendbuf);i++){
         if(sendbuf[i]=='\\'){
             sendbuf[i] = '/';
         }
