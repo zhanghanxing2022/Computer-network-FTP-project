@@ -167,8 +167,7 @@ int main(int argc, char *argv[])
                 // strcat(block.filepath, ControlMsg->data);
 
                 get_server_path(curpath, ControlMsg->data, block.filepath,256);
-
-
+                printf("put:%s\n",block.filepath);
                 //删除已经存在的文件
                 remove(block.filepath);
 
@@ -193,7 +192,6 @@ int main(int argc, char *argv[])
                     block.cache = DataMsg->data;
                     put_in_file(&block, DataMsg->data_size);
                 }
-                printf("put %s\n", block.filepath);
                 break;
             case FTP_delete:
             {
