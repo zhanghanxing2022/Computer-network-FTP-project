@@ -93,11 +93,11 @@ int main(int argc, char *argv[])
             printf("zsh: command not found\n");
             continue;
         }
-        else if (s_cmd == FTP_quit)
-        {
-            printf("%s:>Bye!\n", current_path);
-            break;
-        }
+        // else if (s_cmd == FTP_quit)
+        // {
+        //     printf("%s:>Bye!\n", current_path);
+        //     break;
+        // }
         // 判断参数个数是否正确,比如 "cd file_a b"返回3，是违法指令
         if (param_num != ParamNum[s_cmd])
         {
@@ -154,7 +154,6 @@ int main(int argc, char *argv[])
                 printf("Bye!\n");
                 sleep(1);
                 exit(0);
-                //close(sockCli);
                 return 0;
             default:
                 //printf("Invalid command\n");
