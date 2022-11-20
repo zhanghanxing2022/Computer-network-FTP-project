@@ -189,15 +189,13 @@ int Control_Connection(char *sendbuf, char *recvbuf, int sockCli)
     recv_msg = (MsgHeader *)recvbuf;
     if (recv_msg->error)
         printf("%s\n", recv_msg->data);
-    else if (recv_msg->s_cmd == FTP_delete || recv_msg->s_cmd == FTP_mkdir || recv_msg->s_cmd == FTP_cd || recv_msg->s_cmd == FTP_quit)
-    {
-        if (recv_msg->s_cmd == FTP_cd)
+    else if (recv_msg->s_cmd == FTP_cd)
         {
             memset(current_path, 0, sizeof(current_path));
             strcpy(current_path, recv_msg->data);
         }
-        // printf("Done\n");
-    }
+    else if (recv_msg->s_cmd == FTP_delete || recv_msg->s_cmd == FTP_mkdir)
+            printf("Done\n");
     if (recv_msg->last == 1)
         return 0; // connection success
     else
@@ -235,7 +233,7 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
         
         recvb.cur_size = RecvMsg->data_size;
         recvb.cache = RecvMsg->data;
-        recvb.method = BY_ASCII;
+        recvb.method = BY_BIT;
         put_in_file(&recvb,recvb.cur_size);
     }
 }
