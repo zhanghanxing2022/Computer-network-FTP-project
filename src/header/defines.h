@@ -44,20 +44,8 @@ static const Syntax_Cmd OtableMap[9] = {
     FTP_mkdir,
     FTP_pwd,
     FTP_quit,
-    FTP_error};
-Syntax_Cmd decode_in(const char *argv)
-{
-    Syntax_Cmd res = FTP_error;
-    int i;
-    for (i = 0; i < 8; i++)
-    {
-        if (strncmp(argv, Otable[i], OtableLen[i]) == 0)
-        {
-            res = OtableMap[i];
-        }
-    }
-    return res;
-}
+    FTP_error
+};
 
 static const int ParamNum[8] = {2, 2, 2, 1, 2, 2, 1, 1};
 
@@ -131,7 +119,7 @@ int get_server_path(char *current_path, char *path, char *new_path, int size)
         len = ptr - last_ptr;
         memset(temp, 0, sizeof(temp));
         strncpy(temp, last_ptr, len);
-        //		对不同类型的temp处理
+        //	对不同类型的temp处理
         if (strcmp(temp, "..") == 0)
         {
             char *p = strrchr(new_path, '/');
@@ -165,7 +153,6 @@ int get_server_path(char *current_path, char *path, char *new_path, int size)
         last_ptr = ptr + 1;
         ptr = strchr(ptr + 1, '/');
     }
-    printf("%s\n", new_path);
     return 1;
 }
 
@@ -214,7 +201,7 @@ void str_replace(char *str1, char *str2, char *str3)
     }
     if (count == 0)
     {
-        //        printf("Can't find the replaced string!\n");
+        // printf("Can't find the replaced string!\n");
     }
     return;
 }
@@ -236,7 +223,6 @@ void delete_more(char *str1, char *result)
             count++;
             continue;
         }
-        //
     }
     result[count] = str1[strlen(str1) - 1];
 }
