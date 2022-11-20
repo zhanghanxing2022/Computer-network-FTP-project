@@ -139,6 +139,7 @@ int main(int argc, char *argv[])
                     SendMsg.last = true;
                     memset(SendMsg.data, 0, sizeof(SendMsg.data));
                     strcat(SendMsg.data, file_type(block.filepath) == A_DIR ? "File not Found.Only find a dir." : "File not Found.");
+                    printf("error:%s\n",SendMsg.data);
                     send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
                     break;
                 }
@@ -153,6 +154,7 @@ int main(int argc, char *argv[])
                         // recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
                     } while (ControlMsg->error == true);
                 }
+                printf("get %s\n", block.filepath);
                 break;
             case FTP_put:
                 SendMsg.data_size = 0;
@@ -191,7 +193,7 @@ int main(int argc, char *argv[])
                     block.cache = DataMsg->data;
                     put_in_file(&block, DataMsg->data_size);
                 }
-                printf("\n");
+                printf("put %s\n", block.filepath);
                 break;
             case FTP_delete:
             {
@@ -218,13 +220,14 @@ int main(int argc, char *argv[])
                 }
                 if (remove(delete_path) == -1)
                 {
-                    printf("error\n");
-                    memcpy(SendMsg.data, "fail to delete", 15);
-                    SendMsg.data_size = 15;
+                    printf("error:fail to delete %s\n",SendMsg.data);
+                    memcpy(SendMsg.data, "error:fail to delete", 21);
+                    SendMsg.data_size = 21;
                     SendMsg.error = true;
                 }
                 else
                 {
+                    printf("delete %s\n",delete_path);
                     SendMsg.error = false;
                 }
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
@@ -294,7 +297,7 @@ int main(int argc, char *argv[])
                         strcpy(client_current_path, "root");
                         strncat(client_current_path, ptr, sizeof(curpath) - len);
                     }
-                    printf("curent path:%s\n", curpath);
+                    printf("current path:%s\n", curpath);
                     SendMsg.error = false;
                     strcpy(SendMsg.data, client_current_path);
 
@@ -320,9 +323,9 @@ int main(int argc, char *argv[])
 #endif
                     {
                         SendMsg.error = true;
-                        memcpy(SendMsg.data, "fail to make a new directory", 29);
-                        SendMsg.data_size = 29;
-                        printf("fail to make a new directory\n");
+                        memcpy(SendMsg.data, "error:fail to make a new directory", 35);
+                        SendMsg.data_size = 35;
+                        printf("error:fail to make a new directory\n");
                     }
                     else
                         printf("create directory %s\n", ControlMsg->data);
@@ -330,12 +333,11 @@ int main(int argc, char *argv[])
                 else
                 {
                     SendMsg.error = true;
-                    memcpy(SendMsg.data, "the directory exists", 21);
-                    SendMsg.data_size = 21;
-                    printf("the directory exists\n");
+                    memcpy(SendMsg.data, "error:the directory exists", 27);
+                    SendMsg.data_size = 27;
+                    printf("error:the directory %s exists\n", ControlMsg->data);
                 }
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-                printf("\n");
                 break;
             case FTP_pwd:
                 // Control receive
@@ -348,13 +350,12 @@ int main(int argc, char *argv[])
                 memcpy(SendMsg.data, client_current_path, sizeof(client_current_path));
                 SendMsg.data_size = sizeof(client_current_path);
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
+
+                printf("current path:%s\n",curpath);
                 break;
             case FTP_quit:
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
                 printf("Disconnect from client!\n");
-                // printf("Bye!\n");
-                // sleep(1);
-                // exit(0);
                 break;
             default:
                 break;
