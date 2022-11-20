@@ -191,11 +191,26 @@ int main(int argc, char *argv[])
             case FTP_delete:
             {
                 // filename:ControlMsg->data
+                char *path = ControlMsg->data;
                 char delete_path[256];
                 memset(delete_path, 0, sizeof(delete_path));
-                strcpy(delete_path, curpath);
-                strcat(delete_path, "/");
-                strcat(delete_path, ControlMsg->data);
+               
+                char *ptr = strchr(path, '/');
+                if (ptr == NULL)
+                {
+                    strcpy(delete_path, curpath);
+                    strcat(delete_path, "/");
+                    strcat(delete_path, path);
+                }
+                else
+                {
+                    int len = ptr - path;
+                    if (strncmp(path, "root", len) == 0)
+                    {
+                        strcpy(delete_path, "ServerFile");
+                        strcat(delete_path, ptr);
+                    }
+                }
                 if (remove(delete_path) == -1)
                 {
                     printf("error\n");
