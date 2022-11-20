@@ -8,17 +8,17 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/types.h>
-
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#define SERVER_PORT 5050
-#define SERVER_IP "127.0.0.1"
-#define QUEUE_SIZE 5
-const char Serpath[] = "ServerFile";
 #include "header/defines.h"
 #include <dirent.h>
 
+#define SERVER_PORT 5050
+#define SERVER_IP "127.0.0.1"
+#define QUEUE_SIZE 5
+
+const char Serpath[] = "ServerFile";
 // 当前路径
 char curpath[256];
 // 用戶當前路徑
@@ -287,7 +287,6 @@ int main(int argc, char *argv[])
             }
             case FTP_mkdir:
                 strncpy(block.filepath, curpath, strlen(curpath));
-                // strncpy(block.filepath,"ServerFile/",11);
                 strncpy(block.filepath + strlen(curpath), "/", 1);
                 strncpy(block.filepath + strlen(curpath) + 1, ControlMsg->data, ControlMsg->data_size);
 #ifdef _WIN32
