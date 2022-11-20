@@ -47,13 +47,12 @@ int main(int argc, char *argv[])
     //创建一个与服务器的连接，并检测连接是否成功
     socklen_t addrlen = sizeof(struct sockaddr);
     int res = connect(sockCli,(struct sockaddr*)&addrSer, addrlen);
-    // if(res == -1)
-    //     perror("connect");
-    // else
-    //     printf("Client Connect Server OK.\n");
-    while (res == -1)
+    if(res==-1)
     {
-        perror("connect");
+        printf("Connect failed.Retry...\n");
+    }
+    while  (res == -1)
+    {   
         res = connect(sockCli, (struct sockaddr *)&addrSer, addrlen);
     }
     printf("Client Connect Server OK.\n");
@@ -243,18 +242,30 @@ int Client_get(char* sendbuf, char* recvbuf, int sockCli){
 
 int Client_put(char* sendbuf, char* recvbuf, int sockCli){
     //read from file and store in block
+    struct MsgHeader DataMsg;
+    memset(&DataMsg,0,sizeof(DataMsg));
+    DataMsg.MsgType=Data;
+    DataMsg.s_cmd=FTP_put;
+    DataMsg.data_size=0;
+    DataMsg.last=0;
+
     struct Readbolck block;
     memset(&block,0,sizeof(block));
-    char *buf = (char*)calloc(CACHE_SIZE, sizeof(char));
-    block.cache=buf;
+    block.cache=DataMsg.data;
+    block.method = BY_BIT;
     strncpy(block.filepath, Clientpath,strlen(Clientpath));
     strcat(block.filepath, sendbuf + 4);
 
     //is the file exists?
     block.descriptor=file_type(block.filepath);
-    if(block.descriptor == NOT_FOUND){
+    if(block.descriptor != A_FILE){
         block.error = true;
-        printf("No such file\n");
+        printf("No such file.");
+        if(block.descriptor == A_DIR)
+        {
+            printf("Only find a dir.");
+        }
+        printf("\n");
         return -1;
     }
 
@@ -264,29 +275,21 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
     }
 
     //Data Connection
-    struct MsgHeader DataMsg;
-    memset(&DataMsg,0,sizeof(DataMsg));
-    DataMsg.MsgType=Data;
-    DataMsg.s_cmd=FTP_put;
-    DataMsg.data_size=0;
-    DataMsg.last=0;
+    
 
     //recevice
-    struct MsgHeader* recv_msg;
-    recv_msg=(MsgHeader*)recvbuf;
+    // struct MsgHeader* recv_msg;
+    // recv_msg=(MsgHeader*)recvbuf;
     while(block.error==false&&block.lst == false)
     {
         read_from_file(&block, CACHE_SIZE);
         DataMsg.data_size=block.cur_size;
-        strcpy(DataMsg.data,block.cache);        
         DataMsg.last=block.lst;
-        do{
-            send(sockCli, (char*)&DataMsg, sizeof(struct MsgHeader)+1, 0);
-            recv(sockCli, recvbuf, sizeof(struct MsgHeader)+1, 0);
-        }while(recv_msg->error==true);
+        send(sockCli, (char*)&DataMsg, sizeof(struct MsgHeader)+1, 0);
     }
-    if(recv_msg->last==1) return 0;
-    else return -1;
+    // if(recv_msg->last==1) return 0;
+    // else return -1;
+    return 0;
 }
 
 void printrecv(char* sendbuf, char* recvbuf, int sockCli){
