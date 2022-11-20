@@ -79,14 +79,9 @@ int main(int argc, char *argv[])
             printf("Client Port:> %d\n", ntohs(addrCli.sin_port));
         }
 
-        // char sendbuf[sizeof(struct MsgHeader)+1];     //申请一个发送数据缓存区
-        // struct MsgHeader* send_msg=(struct MsgHeader*)sendbuf;
         char recvbuf[sizeof(struct MsgHeader) + 1]; //申请一个接收数据缓存区
-        // memset(sendbuf,0,sizeof(sendbuf));
         memset(recvbuf, 0, sizeof(recvbuf));
         struct MsgHeader SendMsg;
-        // 改成全局变量
-        // char curpath[256];
         strncpy(curpath, Serpath, sizeof(Serpath));
         while (1)
         {
@@ -101,10 +96,6 @@ int main(int argc, char *argv[])
                 break;
             }
             struct MsgHeader *ControlMsg = (struct MsgHeader *)recvbuf;
-            // Control Connection response
-            // struct MsgHeader recvMsg;
-            // recvMsg.last=1;
-            // send(sockConn, (char*)&recvMsg, sizeof(struct MsgHeader)+1, 0);
 
             // Control Connection response
             memset(&SendMsg, 0, sizeof(SendMsg));
@@ -127,9 +118,7 @@ int main(int argc, char *argv[])
                 SendMsg.s_cmd = FTP_get;
                 block.cache = SendMsg.data;
                 block.method = BY_BIT;
-                // strncpy(block.filepath, curpath, strlen(curpath));
-                // strcat(block.filepath, "/");
-                // strcat(block.filepath, ControlMsg->data);
+
                 get_server_path(curpath, ControlMsg->data, block.filepath,256);
 
                 printf("get %s\n", block.filepath);
@@ -151,7 +140,6 @@ int main(int argc, char *argv[])
                     do
                     {
                         send(sockConn, (char *)&SendMsg, sizeof(MsgHeader) + 1, 0);
-                        // recv(sockConn, recvbuf, sizeof(struct MsgHeader) + 1, 0);
                     } while (ControlMsg->error == true);
                 }
                 printf("get %s\n", block.filepath);
@@ -162,13 +150,8 @@ int main(int argc, char *argv[])
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
                 block.method=BY_BIT;
 
-                // get filename
-                // strncpy(block.filepath, curpath, strlen(curpath));
-                // strcat(block.filepath, "/");
-                // strcat(block.filepath, ControlMsg->data);
-
                 get_server_path(curpath, ControlMsg->data, block.filepath,256);
-                printf("put:%s\n",block.filepath);
+
                 //删除已经存在的文件
                 remove(block.filepath);
 
@@ -190,6 +173,7 @@ int main(int argc, char *argv[])
                     block.method =BY_BIT;
                     put_in_file(&block, DataMsg->data_size);
                 }
+                printf("put %s\n", block.filepath);
                 break;
             case FTP_delete:
             {
