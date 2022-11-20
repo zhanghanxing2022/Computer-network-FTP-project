@@ -127,9 +127,11 @@ int main(int argc, char *argv[])
                 SendMsg.s_cmd = FTP_get;
                 block.cache = SendMsg.data;
                 block.method = BY_BIT;
-                strncpy(block.filepath, curpath, strlen(curpath));
-                strcat(block.filepath, "/");
-                strcat(block.filepath, ControlMsg->data);
+                // strncpy(block.filepath, curpath, strlen(curpath));
+                // strcat(block.filepath, "/");
+                // strcat(block.filepath, ControlMsg->data);
+                get_server_path(curpath, ControlMsg->data, block.filepath,256);
+
                 printf("get %s\n", block.filepath);
                 if (file_type(block.filepath) != A_FILE)
                 {
@@ -158,9 +160,12 @@ int main(int argc, char *argv[])
                 send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
 
                 // get filename
-                strncpy(block.filepath, curpath, strlen(curpath));
-                strcat(block.filepath, "/");
-                strcat(block.filepath, ControlMsg->data);
+                // strncpy(block.filepath, curpath, strlen(curpath));
+                // strcat(block.filepath, "/");
+                // strcat(block.filepath, ControlMsg->data);
+
+                get_server_path(curpath, ControlMsg->data, block.filepath,256);
+
 
                 //删除已经存在的文件
                 remove(block.filepath);
@@ -194,7 +199,7 @@ int main(int argc, char *argv[])
                 char *path = ControlMsg->data;
                 char delete_path[256];
                 memset(delete_path, 0, sizeof(delete_path));
-               
+
                 char *ptr = strchr(path, '/');
                 if (ptr == NULL)
                 {
@@ -257,58 +262,14 @@ int main(int argc, char *argv[])
             }
             case FTP_cd:
             {
-                char *path = ControlMsg->data;
+                char *_path = ControlMsg->data;
+                char path[256];
+                memset(path,0,sizeof(path));
+                // 将path转成全是“\”的形式，然后丢到get_server_path里面处理
+                transform_path(_path,path);
                 char server_path[256];
                 memset(server_path, 0, sizeof(server_path));
-                char *ptr = strchr(path, '/');
-                if (ptr == NULL)
-                {
-                    if (strcmp(path, "root") == 0 || strcmp(path, "~") == 0)
-                    {
-                        memset(curpath, 0, sizeof(curpath));
-                        memset(client_current_path, 0, sizeof(client_current_path));
-                        strcpy(curpath, "ServerFile");
-                        strcpy(client_current_path, "root");
-                        strcpy(SendMsg.data, client_current_path);
-
-                        send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-                        break;
-                    }
-                }
-                else
-                {
-                    int len = ptr - path;
-                    if (strncmp(path, "root", len) == 0)
-                    {
-                        // 将root换成serverfile，检查文件夹是否存在，如果存在，则直接覆盖
-                        strcpy(server_path, "ServerFile");
-                        strncat(server_path, ptr, sizeof(path) - len);
-                        if ((opendir(server_path)) == NULL)
-                        {
-                            printf("file does not exit\n");
-                            SendMsg.error = true;
-                            memcpy(SendMsg.data, "curpath error", 14);
-                            SendMsg.data_size = 14;
-                            send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-                            break;
-                        }
-                        else
-                        {
-                            memset(curpath, 0, sizeof(curpath));
-                            memset(client_current_path, 0, sizeof(client_current_path));
-                            strcpy(curpath, server_path);
-                            strcpy(client_current_path, path);
-                            strcpy(SendMsg.data, client_current_path);
-
-                            send(sockConn, (char *)&SendMsg, sizeof(struct MsgHeader) + 1, 0);
-                            break;
-                        }
-                    }
-                }
-
-                strcpy(server_path, curpath);
-                strcat(server_path, "/");
-                strcat(server_path, path);
+                get_server_path(curpath, path, server_path,256);
                 if ((opendir(server_path)) == NULL)
                 {
                     printf("file does not exit\n");
@@ -319,42 +280,19 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    if (strcmp(path, "..") == 0)
+                    memset(curpath, 0, sizeof(curpath));
+                    memset(client_current_path, 0, sizeof(client_current_path));
+                    strcpy(curpath, server_path);
+                    char *ptr = strchr(curpath, '/');
+                    if (ptr == NULL)
                     {
-                        char *ptr = strrchr(curpath, '/');
-                        if (ptr == NULL)
-                        {
-                            SendMsg.error = false;
-                            strcpy(SendMsg.data, client_current_path);
-                            printf("No parent directory\n");
-                        }
-                        else
-                        {
-                            int len = ptr - curpath;
-                            memset(ptr, 0, sizeof(curpath) - len);
-                        }
-
-                        ptr = strrchr(client_current_path, '/');
-                        if (ptr == NULL)
-                        {
-                            printf("No parent directory\n");
-                        }
-                        else
-                        {
-                            int len = ptr - client_current_path;
-                            memset(ptr, 0, sizeof(client_current_path) - len);
-                        }
-                    }
-                    else if (strcmp(path, ".") == 0)
-                    {
-                        // do nothing
+                        strcpy(client_current_path, "root");
                     }
                     else
                     {
-                        strcat(curpath, "/");
-                        strcat(curpath, path);
-                        strcat(client_current_path, "/");
-                        strcat(client_current_path, path);
+                        int len = ptr - path;
+                        strcpy(client_current_path, "root");
+                        strncat(client_current_path, ptr, sizeof(curpath) - len);
                     }
                     printf("curent path:%s\n", curpath);
                     SendMsg.error = false;

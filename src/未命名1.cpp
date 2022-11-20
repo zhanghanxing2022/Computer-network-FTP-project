@@ -7,7 +7,10 @@ int main(){
 	char p[256] = "serverfile";
     char *ptr = strchr(path, '/');
     int len = ptr - path;
-	printf("%d\n",strncmp(path,"root",len)); 
+	printf("%d\n",(opendir("..\\src")) == NULL); 
 	strcat(p,ptr);
 	printf("%s\n",p);
+	ptr = strchr(ptr + 1, '/');
+	len = ptr - path;
+	printf("%d\n",len);
 }
