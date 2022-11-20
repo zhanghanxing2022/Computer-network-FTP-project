@@ -92,11 +92,7 @@ int main(int argc, char *argv[])
             printf("zsh: command not found\n");
             continue;
         }
-        // else if (s_cmd == FTP_quit)
-        // {
-        //     printf("%s:>Bye!\n", current_path);
-        //     break;
-        // }
+        
         // 判断参数个数是否正确,比如 "cd file_a b"返回3，是违法指令
         if (param_num != ParamNum[s_cmd])
         {
@@ -272,12 +268,7 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
         return -1;
     }
 
-    //Data Connection
-    
-
     //recevice
-    // struct MsgHeader* recv_msg;
-    // recv_msg=(MsgHeader*)recvbuf;
     while(block.error==false&&block.lst == false)
     {
         read_from_file(&block, CACHE_SIZE);
@@ -285,8 +276,6 @@ int Client_put(char* sendbuf, char* recvbuf, int sockCli){
         DataMsg.last=block.lst;
         send(sockCli, (char*)&DataMsg, sizeof(struct MsgHeader)+1, 0);
     }
-    // if(recv_msg->last==1) return 0;
-    // else return -1;
     return 0;
 }
 
