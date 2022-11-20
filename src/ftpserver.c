@@ -162,6 +162,7 @@ int main(int argc, char *argv[])
                 strncpy(block.filepath, curpath, strlen(curpath));
                 strcat(block.filepath, "/");
                 strcat(block.filepath, ControlMsg->data);
+                block.method=BY_BIT;
 
                 //删除已经存在的文件
                 remove(block.filepath);
